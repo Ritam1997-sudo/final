@@ -637,24 +637,6 @@ Precautions: Avoid heavy lifting.</div>
                 saveLoader.classList.add('hidden');
             }
         });
-
-        
-  firebase.auth().onAuthStateChanged(function(user) {
-    if (user) {
-      // Already signed in anonymously
-      console.log("Signed in as:", user.uid);
-    } else {
-      // Sign in anonymously
-      firebase.auth().signInAnonymously()
-        .then((userCredential) => {
-          console.log("Signed in anonymously:", userCredential.user.uid);
-        })
-        .catch((error) => {
-          console.error("Anonymous sign-in failed:", error);
-        });
-    }
-  });
-</script>
-
+    </script>
 </body>
 </html>
