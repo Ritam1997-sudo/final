@@ -131,6 +131,35 @@
     </style>
 </head>
 <body class="p-4">
+
+
+<!-- Signup Form -->
+<div id="signup-box">
+  <input type="email" id="signup-email" placeholder="Email">
+  <input type="password" id="signup-password" placeholder="Password">
+  <button onclick="signUp()">Sign Up</button>
+</div>
+
+<!-- Login Form -->
+<div id="login-box">
+  <input type="email" id="login-email" placeholder="Email">
+  <input type="password" id="login-password" placeholder="Password">
+  <button onclick="login()">Login</button>
+</div>
+
+<!-- Logout -->
+<div id="logout-box" style="display:none;">
+  <p>Welcome! You are logged in.</p>
+  <button onclick="logout()">Logout</button>
+</div>
+
+<!-- Main App Content -->
+<div id="app-content" style="display:none;">
+  
+
+
+
+
     <div class="container mx-auto">
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-3xl font-bold text-blue-600">PhysioRX</h1>
@@ -290,12 +319,19 @@ Precautions: Avoid heavy lifting.</div>
         </div>
     </div>
 
+
+</div>
+
+
     <!-- Firebase Scripts -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-analytics.js";
         import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
-        
+       
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+
+ 
         const firebaseConfig = {
             apiKey: "AIzaSyB20P6ZVvks0YWZlyJEeh36mOdIMjw-CbY",
             authDomain: "ritam-91a4b.firebaseapp.com",
@@ -310,6 +346,7 @@ Precautions: Avoid heavy lifting.</div>
         const app = initializeApp(firebaseConfig);
         const analytics = getAnalytics(app);
         const database = getDatabase(app);
+const auth = getAuth(app);
         
         window.firebaseFunctions = {
             savePatientRecord: async function(patientData, isEdit = false, recordId = null) {
@@ -342,6 +379,50 @@ Precautions: Avoid heavy lifting.</div>
                 }
             }
         };
+
+
+window.authFunctions = {
+    signUp: function () {
+        const email = document.getElementById("signup-email").value;
+        const password = document.getElementById("signup-password").value;
+        createUserWithEmailAndPassword(auth, email, password)
+            .then(() => alert("Sign up successful"))
+            .catch((error) => alert(error.message));
+    },
+
+    login: function () {
+        const email = document.getElementById("login-email").value;
+        const password = document.getElementById("login-password").value;
+        signInWithEmailAndPassword(auth, email, password)
+            .then(() => alert("Login successful"))
+            .catch((error) => alert(error.message));
+    },
+
+    logout: function () {
+        signOut(auth)
+            .then(() => alert("Logged out"))
+            .catch((error) => alert(error.message));
+    }
+};
+
+window.signUp = window.authFunctions.signUp;
+window.login = window.authFunctions.login;
+window.logout = window.authFunctions.logout;
+
+// Auth state monitor
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        document.getElementById("app-content").style.display = "block";
+        document.getElementById("signup-box").style.display = "none";
+        document.getElementById("login-box").style.display = "none";
+        document.getElementById("logout-box").style.display = "block";
+    } else {
+        document.getElementById("app-content").style.display = "none";
+        document.getElementById("signup-box").style.display = "block";
+        document.getElementById("login-box").style.display = "block";
+        document.getElementById("logout-box").style.display = "none";
+    }
+});
     </script>    
     <!-- Application Logic -->
     <script>
