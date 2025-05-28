@@ -11,7 +11,8 @@
       font-family: 'Arial', sans-serif;
       background-color: #f0f4f8;
     }
-    .patient-table th, .patient-table td {
+    .patient-table th,
+    .patient-table td {
       padding: 12px;
       text-align: left;
       border-bottom: 1px solid #e2e8f0;
@@ -36,8 +37,12 @@
       transition: opacity 0.3s;
       z-index: 1000;
     }
-    .toast.error { background: #f44336; }
-    .toast.show { opacity: 1; }
+    .toast.error {
+      background: #f44336;
+    }
+    .toast.show {
+      opacity: 1;
+    }
     .loader {
       border: 4px solid #f3f3f3;
       border-top: 4px solid #3b82f6;
@@ -61,6 +66,8 @@
       transform: translateY(1px);
     }
   </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/tabletoexcel@1.1.0/dist/tableToExcel.min.js"></script>
 </head>
 <body class="px-4 py-6">
   <div class="max-w-7xl mx-auto">
@@ -89,9 +96,10 @@
         <tbody id="patientTableBody"></tbody>
       </table>
     </div>
+  </div>
 
-    <!-- Export Button -->
-    <button id="exportBtn" class="mt-4 bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600 transition btn">
+  <div class="mt-6 text-right">
+    <button id="exportBtn" class="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600 transition btn">
       <i class="fas fa-file-excel mr-2"></i>Export to Excel
     </button>
   </div>
@@ -109,10 +117,7 @@
     </div>
   </div>
 
-  <!-- TableToExcel Script (non-module) -->
-  <script src="https://cdn.jsdelivr.net/npm/tabletoexcel@1.1.0/dist/tableToExcel.min.js"></script>
-
-  <!-- Firebase and Main Script -->
+  <!-- Firebase Module Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
     import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
@@ -133,99 +138,95 @@
     const database = getDatabase(app);
     const auth = getAuth(app);
 
-    document.addEventListener('DOMContentLoaded', () => {
-      const patientTableBody = document.getElementById('patientTableBody');
+    function formatDateForDisplay(dateString) {
+      if (!dateString) return '';
+      const d = new Date(dateString);
+      if (isNaN(d.getTime())) return dateString;
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
+
+    function showLoader(text) {
+      document.getElementById('loaderText').textContent = text || 'Loading...';
+      document.getElementById('saveLoader').classList.remove('hidden');
+    }
+
+    function hideLoader() {
+      document.getElementById('saveLoader').classList.add('hidden');
+    }
+
+    function showToast(message, isError = false) {
       const toast = document.getElementById('toast');
       const toastMessage = document.getElementById('toastMessage');
-      const saveLoader = document.getElementById('saveLoader');
-      const loaderText = document.getElementById('loaderText');
+      toastMessage.textContent = message;
+      toast.className = isError ? 'toast error' : 'toast';
+      setTimeout(() => toast.classList.add('show'), 100);
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
 
-      function showLoader(text) {
-        loaderText.textContent = text || 'Loading...';
-        saveLoader.classList.remove('hidden');
-      }
+    function loadPatientRecords() {
+      showLoader('Loading patient records...');
+      const patientTableBody = document.getElementById('patientTableBody');
+      const recordsRef = ref(database, 'allRecords');
+      onValue(recordsRef, (snapshot) => {
+        const data = snapshot.val();
+        patientTableBody.innerHTML = '';
 
-      function hideLoader() {
-        saveLoader.classList.add('hidden');
-      }
-
-      function showToast(message, isError = false) {
-        toastMessage.textContent = message;
-        toast.className = isError ? 'toast error' : 'toast';
-        setTimeout(() => { toast.classList.add('show'); }, 100);
-        setTimeout(() => { toast.classList.remove('show'); }, 3000);
-      }
-
-      function formatDateForDisplay(dateString) {
-        if (!dateString) return '';
-        const d = new Date(dateString);
-        if (isNaN(d.getTime())) return dateString;
-        const day = String(d.getDate()).padStart(2, '0');
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const year = d.getFullYear();
-        return `${day}/${month}/${year}`;
-      }
-
-      function loadPatientRecords() {
-        showLoader('Loading patient records...');
-        const recordsRef = ref(database, 'allRecords');
-        onValue(recordsRef, (snapshot) => {
-          const data = snapshot.val();
-          patientTableBody.innerHTML = '';
-
-          if (data) {
-            Object.values(data).forEach(record => {
-              const row = document.createElement('tr');
-              row.innerHTML = `
-                <td>${record.patientId || 'N/A'}</td>
-                <td>${record.patientName || 'N/A'}</td>
-                <td>${record.patientAge || 'N/A'}</td>
-                <td>${record.gender || 'Not specified'}</td>
-                <td>${record.contactNumber || 'N/A'}</td>
-                <td>${record.address || 'N/A'}</td>
-                <td>${formatDateForDisplay(record.date)}</td>
-                <td>${record.doctorNotes || 'No notes'}</td>
-                <td>
-                  <a href="index.html?edit=${record.recordId}" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition btn">
-                    <i class="fas fa-edit mr-2"></i>Edit
-                  </a>
-                </td>
-              `;
-              patientTableBody.appendChild(row);
-            });
-            hideLoader();
-            showToast('Patient records loaded successfully!');
-          } else {
-            hideLoader();
-            showToast('No patient records found.', true);
-          }
-        }, (error) => {
+        if (data) {
+          Object.values(data).forEach(record => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${record.patientId || 'N/A'}</td>
+              <td>${record.patientName || 'N/A'}</td>
+              <td>${record.patientAge || 'N/A'}</td>
+              <td>${record.gender || 'Not specified'}</td>
+              <td>${record.contactNumber || 'N/A'}</td>
+              <td>${record.address || 'N/A'}</td>
+              <td>${formatDateForDisplay(record.date)}</td>
+              <td>${record.doctorNotes || 'No notes'}</td>
+              <td>
+                <a href="index.html?edit=${record.recordId}" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition btn">
+                  <i class="fas fa-edit mr-2"></i>Edit
+                </a>
+              </td>
+            `;
+            patientTableBody.appendChild(row);
+          });
           hideLoader();
-          showToast('Failed to load patient records.', true);
-          console.error('Error fetching records:', error);
-        });
-      }
-
-      // Auth check
-      onAuthStateChanged(auth, (user) => {
-        if (user) {
-          loadPatientRecords();
+          showToast('Patient records loaded successfully!');
         } else {
-          alert("Please login to view patient history.");
-          window.location.href = "index.html";
+          hideLoader();
+          showToast('No patient records found.', true);
         }
+      }, (error) => {
+        hideLoader();
+        showToast('Failed to load patient records.', true);
+        console.error('Error fetching records:', error);
       });
+    }
 
- </script>
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        loadPatientRecords();
+      } else {
+        alert("Please login to view patient history.");
+        window.location.href = "index.html";
+      }
+    });
+  </script>
 
- <script>
-
-      
+  <!-- Separate script for Export button -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('exportBtn').addEventListener('click', () => {
         const table = document.getElementById('patientTable');
-        window.TableToExcel.convert(table, {
+        TableToExcel.convert(table, {
           name: 'Patient_History.xlsx',
-          sheet: { name: 'Patient History' }
+          sheet: {
+            name: 'Patient History'
+          }
         });
       });
     });
