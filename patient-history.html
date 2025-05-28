@@ -11,8 +11,7 @@
       font-family: 'Arial', sans-serif;
       background-color: #f0f4f8;
     }
-    .patient-table th,
-    .patient-table td {
+    .patient-table th, .patient-table td {
       padding: 12px;
       text-align: left;
       border-bottom: 1px solid #e2e8f0;
@@ -37,12 +36,8 @@
       transition: opacity 0.3s;
       z-index: 1000;
     }
-    .toast.error {
-      background: #f44336;
-    }
-    .toast.show {
-      opacity: 1;
-    }
+    .toast.error { background: #f44336; }
+    .toast.show { opacity: 1; }
     .loader {
       border: 4px solid #f3f3f3;
       border-top: 4px solid #3b82f6;
@@ -66,8 +61,6 @@
       transform: translateY(1px);
     }
   </style>
-
-<script src="https://cdn.jsdelivr.net/npm/tabletoexcel@1.1.0/dist/tableToExcel.min.js"></script>
 </head>
 <body class="px-4 py-6">
   <div class="max-w-7xl mx-auto">
@@ -79,7 +72,7 @@
     </div>
 
     <div class="bg-white rounded-lg shadow overflow-x-auto p-6">
-      <table class="w-full patient-table">
+      <table class="w-full patient-table" id="patientTable">
         <thead>
           <tr>
             <th>Patient ID</th>
@@ -96,6 +89,11 @@
         <tbody id="patientTableBody"></tbody>
       </table>
     </div>
+
+    <!-- Export Button -->
+    <button id="exportBtn" class="mt-4 bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600 transition btn">
+      <i class="fas fa-file-excel mr-2"></i>Export to Excel
+    </button>
   </div>
 
   <!-- Toast Notification -->
@@ -111,12 +109,10 @@
     </div>
   </div>
 
-<!-- Add this button where you want the export option to appear -->
-<button id="exportBtn" class="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600 transition btn">
-  <i class="fas fa-file-excel mr-2"></i>Export to Excel
-</button>
+  <!-- TableToExcel Script (non-module) -->
+  <script src="https://cdn.jsdelivr.net/npm/tabletoexcel@1.1.0/dist/tableToExcel.min.js"></script>
 
-  <!-- Firebase Scripts -->
+  <!-- Firebase and Main Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
     import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
@@ -156,12 +152,8 @@
       function showToast(message, isError = false) {
         toastMessage.textContent = message;
         toast.className = isError ? 'toast error' : 'toast';
-        setTimeout(() => {
-          toast.classList.add('show');
-        }, 100);
-        setTimeout(() => {
-          toast.classList.remove('show');
-        }, 3000);
+        setTimeout(() => { toast.classList.add('show'); }, 100);
+        setTimeout(() => { toast.classList.remove('show'); }, 3000);
       }
 
       function formatDateForDisplay(dateString) {
@@ -214,6 +206,7 @@
         });
       }
 
+      // Auth check
       onAuthStateChanged(auth, (user) => {
         if (user) {
           loadPatientRecords();
@@ -222,18 +215,16 @@
           window.location.href = "index.html";
         }
       });
-    });
 
-// Add this script before the closing </body> tag or in your existing script section
-document.getElementById('exportBtn').addEventListener('click', function () {
-  const table = document.querySelector('.patient-table');
-  TableToExcel.convert(table, {
-    name: 'Patient_History.xlsx',
-    sheet: {
-      name: 'Patient History'
-    }
-  });
-});
+      // ✅ Export to Excel
+      document.getElementById('exportBtn').addEventListener('click', () => {
+        const table = document.getElementById('patientTable');
+        window.TableToExcel.convert(table, {
+          name: 'Patient_History.xlsx',
+          sheet: { name: 'Patient History' }
+        });
+      });
+    });
   </script>
 </body>
 </html>
