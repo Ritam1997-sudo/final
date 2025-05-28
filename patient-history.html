@@ -114,127 +114,121 @@
         </div>
     </div>
 
-    <!-- Firebase Scripts -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
-        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
+   <!-- Firebase Scripts -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyB20P6ZVvks0YWZlyJEeh36mOdIMjw-CbY",
-            authDomain: "ritam-91a4b.firebaseapp.com",
-            databaseURL: "https://ritam-91a4b-default-rtdb.firebaseio.com",
-            projectId: "ritam-91a4b",
-            storageBucket: "ritam-91a4b.firebasestorage.app",
-            messagingSenderId: "311301321832",
-            appId: "1:311301321832:web:05b00ad5141e249e53b7dd",
-            measurementId: "G-30RLVWXNB2"
-        };
+    const firebaseConfig = {
+        apiKey: "AIzaSyB20P6ZVvks0YWZlyJEeh36mOdIMjw-CbY",
+        authDomain: "ritam-91a4b.firebaseapp.com",
+        databaseURL: "https://ritam-91a4b-default-rtdb.firebaseio.com",
+        projectId: "ritam-91a4b",
+        storageBucket: "ritam-91a4b.firebasestorage.app",
+        messagingSenderId: "311301321832",
+        appId: "1:311301321832:web:05b00ad5141e249e53b7dd",
+        measurementId: "G-30RLVWXNB2"
+    };
 
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
+    const auth = getAuth(app);
 
-        document.addEventListener('DOMContentLoaded', function() {
-            const patientTableBody = document.getElementById('patientTableBody');
-            const toast = document.getElementById('toast');
-            const toastMessage = document.getElementById('toastMessage');
-            const saveLoader = document.getElementById('saveLoader');
-            const loaderText = document.getElementById('loaderText');
+    document.addEventListener('DOMContentLoaded', () => {
+        const patientTableBody = document.getElementById('patientTableBody');
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toastMessage');
+        const saveLoader = document.getElementById('saveLoader');
+        const loaderText = document.getElementById('loaderText');
 
+        // Show loader
+        function showLoader(text) {
+            loaderText.textContent = text || 'Loading...';
+            saveLoader.classList.remove('hidden');
+        }
 
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
-const auth = getAuth(app);
+        // Hide loader
+        function hideLoader() {
+            saveLoader.classList.add('hidden');
+        }
 
-// Optional: Check if user is logged in before loading data
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        loadPatientRecords(); // Load records only if user is logged in
-    } else {
-        alert("Please login to view patient history.");
-        window.location.href = "index.html"; // redirect to login page
-    }
-});
+        // Show toast notification
+        function showToast(message, isError = false) {
+            toastMessage.textContent = message;
+            toast.className = isError ? 'toast error' : 'toast';
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 100);
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
 
+        // Format date for display
+        function formatDateForDisplay(dateString) {
+            if (!dateString) return '';
+            const d = new Date(dateString);
+            if (isNaN(d.getTime())) return dateString;
+            let month = '' + (d.getMonth() + 1);
+            let day = '' + d.getDate();
+            const year = d.getFullYear();
+            if (month.length < 2) month = '0' + month;
+            if (day.length < 2) day = '0' + day;
+            return [day, month, year].join('/');
+        }
 
-            // Show loader
-            function showLoader(text) {
-                loaderText.textContent = text || 'Loading...';
-                saveLoader.classList.remove('hidden');
-            }
+        // Fetch and display patient records
+        function loadPatientRecords() {
+            showLoader('Loading patient records...');
+            const recordsRef = ref(database, 'allRecords');
+            onValue(recordsRef, (snapshot) => {
+                const data = snapshot.val();
+                patientTableBody.innerHTML = ''; // Clear table
 
-            // Hide loader
-            function hideLoader() {
-                saveLoader.classList.add('hidden');
-            }
-
-            // Show toast notification
-            function showToast(message, isError = false) {
-                toastMessage.textContent = message;
-                toast.className = isError ? 'toast error' : 'toast';
-                setTimeout(() => {
-                    toast.classList.add('show');
-                }, 100);
-                setTimeout(() => {
-                    toast.classList.remove('show');
-                }, 3000);
-            }
-
-            // Format date for display
-            function formatDateForDisplay(dateString) {
-                if (!dateString) return '';
-                const d = new Date(dateString);
-                if (isNaN(d.getTime())) return dateString;
-                let month = '' + (d.getMonth() + 1);
-                let day = '' + d.getDate();
-                const year = d.getFullYear();
-                if (month.length < 2) month = '0' + month;
-                if (day.length < 2) day = '0' + day;
-                return [day, month, year].join('/');
-            }
-
-            // Fetch and display patient records
-            function loadPatientRecords() {
-                showLoader('Loading patient records...');
-                const recordsRef = ref(database, 'allRecords');
-                onValue(recordsRef, (snapshot) => {
-                    const data = snapshot.val();
-                    patientTableBody.innerHTML = ''; // Clear table
-
-                    if (data) {
-                        Object.values(data).forEach(record => {
-                            const row = document.createElement('tr');
-                            row.innerHTML = `
-                                <td>${record.patientId || 'N/A'}</td>
-                                <td>${record.patientName || 'N/A'}</td>
-                                <td>${record.patientAge || 'N/A'}</td>
-                                <td>${record.gender || 'Not specified'}</td>
-                                <td>${record.contactNumber || 'N/A'}</td>
-                                <td>${record.address || 'N/A'}</td>
-                                <td>${formatDateForDisplay(record.date)}</td>
-                                <td>${record.doctorNotes || 'No notes'}</td>
-                                <td>
-                                    <a href="index.html?edit=${record.recordId}" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition btn">
-                                        <i class="fas fa-edit mr-2"></i>Edit
-                                    </a>
-                                </td>
-                            `;
-                            patientTableBody.appendChild(row);
-                        });
-                        hideLoader();
-                        showToast('Patient records loaded successfully!');
-                    } else {
-                        hideLoader();
-                        showToast('No patient records found.', true);
-                    }
-                }, (error) => {
+                if (data) {
+                    Object.values(data).forEach(record => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${record.patientId || 'N/A'}</td>
+                            <td>${record.patientName || 'N/A'}</td>
+                            <td>${record.patientAge || 'N/A'}</td>
+                            <td>${record.gender || 'Not specified'}</td>
+                            <td>${record.contactNumber || 'N/A'}</td>
+                            <td>${record.address || 'N/A'}</td>
+                            <td>${formatDateForDisplay(record.date)}</td>
+                            <td>${record.doctorNotes || 'No notes'}</td>
+                            <td>
+                                <a href="index.html?edit=${record.recordId}" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition btn">
+                                    <i class="fas fa-edit mr-2"></i>Edit
+                                </a>
+                            </td>
+                        `;
+                        patientTableBody.appendChild(row);
+                    });
                     hideLoader();
-                    showToast('Failed to load patient records.', true);
-                    console.error('Error fetching records:', error);
-                });
-            }
+                    showToast('Patient records loaded successfully!');
+                } else {
+                    hideLoader();
+                    showToast('No patient records found.', true);
+                }
+            }, (error) => {
+                hideLoader();
+                showToast('Failed to load patient records.', true);
+                console.error('Error fetching records:', error);
+            });
+        }
 
-            // Load records on page load
-            loadPatientRecords();
+        // Check if user is logged in before loading records
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                loadPatientRecords(); // Load records only if user is logged in
+            } else {
+                alert("Please login to view patient history.");
+                window.location.href = "index.html"; // redirect to login page
+            }
         });
-    </script>
+    });
+</script>
 </body>
 </html>
