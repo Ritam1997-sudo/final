@@ -140,6 +140,21 @@
             const saveLoader = document.getElementById('saveLoader');
             const loaderText = document.getElementById('loaderText');
 
+
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-auth.js";
+const auth = getAuth(app);
+
+// Optional: Check if user is logged in before loading data
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        loadPatientRecords(); // Load records only if user is logged in
+    } else {
+        alert("Please login to view patient history.");
+        window.location.href = "index.html"; // redirect to login page
+    }
+});
+
+
             // Show loader
             function showLoader(text) {
                 loaderText.textContent = text || 'Loading...';
