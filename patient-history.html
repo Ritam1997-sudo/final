@@ -120,6 +120,11 @@
     </div>
   </div>
 
+  <script>
+    // Create a global variable to store patient data that will be accessible to all scripts
+    window.patientData = [];
+  </script>
+
   <!-- Firebase Module Script -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
@@ -169,9 +174,6 @@
       setTimeout(() => toast.classList.remove('show'), 3000);
     }
 
-    // Store the patient data for exporting
-    let patientData = [];
-
     function loadPatientRecords() {
       showLoader('Loading patient records...');
       const patientTableBody = document.getElementById('patientTableBody');
@@ -179,20 +181,20 @@
       onValue(recordsRef, (snapshot) => {
         const data = snapshot.val();
         patientTableBody.innerHTML = '';
-        patientData = []; // Reset patient data array
+        window.patientData = []; // Reset the global patient data array
 
         if (data) {
           Object.values(data).forEach(record => {
-            // Store the record in our array for export
-            patientData.push({
-              patientId: record.patientId || 'N/A',
-              patientName: record.patientName || 'N/A',
-              patientAge: record.patientAge || 'N/A',
-              gender: record.gender || 'Not specified',
-              contactNumber: record.contactNumber || 'N/A',
-              address: record.address || 'N/A',
-              date: formatDateForDisplay(record.date),
-              doctorNotes: record.doctorNotes || 'No notes'
+            // Store the record in our global array for export
+            window.patientData.push({
+              "Patient ID": record.patientId || 'N/A',
+              "Name": record.patientName || 'N/A',
+              "Age": record.patientAge || 'N/A',
+              "Gender": record.gender || 'Not specified',
+              "Contact": record.contactNumber || 'N/A',
+              "Address": record.address || 'N/A',
+              "Date": formatDateForDisplay(record.date),
+              "Notes": record.doctorNotes || 'No notes'
             });
 
             const row = document.createElement('tr');
@@ -213,6 +215,8 @@
             `;
             patientTableBody.appendChild(row);
           });
+          
+          console.log("Patient data loaded:", window.patientData.length, "records"); // Debug log
           
           // Show export button after data is loaded
           document.getElementById('exportBtn').classList.remove('hidden');
@@ -238,22 +242,18 @@
         window.location.href = "index.html";
       }
     });
-
-    // Make patientData available globally
-    window.patientData = patientData;
   </script>
 
-  <!-- Export to Excel Script -->
+  <!-- Export to Excel Script - Using a regular script tag to ensure it has access to global variables -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const exportBtn = document.getElementById('exportBtn');
       
       exportBtn.addEventListener('click', () => {
         try {
-          // Get the data from the global variable
-          const data = window.patientData;
+          console.log("Export button clicked, data length:", window.patientData.length); // Debug log
           
-          if (!data || data.length === 0) {
+          if (!window.patientData || window.patientData.length === 0) {
             alert("No data available to export!");
             return;
           }
@@ -261,8 +261,8 @@
           // Create a new workbook
           const wb = XLSX.utils.book_new();
           
-          // Create a worksheet from patient data (excluding the edit buttons)
-          const ws = XLSX.utils.json_to_sheet(data);
+          // Create a worksheet from patient data
+          const ws = XLSX.utils.json_to_sheet(window.patientData);
           
           // Add worksheet to workbook
           XLSX.utils.book_append_sheet(wb, ws, "Patient History");
@@ -274,13 +274,16 @@
           const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
           saveAs(blob, "Patient_History.xlsx");
           
-          document.getElementById('toast').className = 'toast';
-          document.getElementById('toastMessage').textContent = 'Excel file downloaded successfully!';
-          setTimeout(() => document.getElementById('toast').classList.add('show'), 100);
-          setTimeout(() => document.getElementById('toast').classList.remove('show'), 3000);
+          // Show success toast
+          const toast = document.getElementById('toast');
+          const toastMessage = document.getElementById('toastMessage');
+          toastMessage.textContent = 'Excel file downloaded successfully!';
+          toast.className = 'toast';
+          setTimeout(() => toast.classList.add('show'), 100);
+          setTimeout(() => toast.classList.remove('show'), 3000);
         } catch (error) {
           console.error('Export failed:', error);
-          alert("Failed to export data. Please try again.");
+          alert("Failed to export data: " + error.message);
         }
       });
     });
