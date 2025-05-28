@@ -66,6 +66,8 @@
       transform: translateY(1px);
     }
   </style>
+
+<script src="https://cdn.jsdelivr.net/npm/tabletoexcel@1.1.0/dist/tableToExcel.min.js"></script>
 </head>
 <body class="px-4 py-6">
   <div class="max-w-7xl mx-auto">
@@ -108,6 +110,11 @@
       <p id="loaderText">Loading...</p>
     </div>
   </div>
+
+<!-- Add this button where you want the export option to appear -->
+<button id="exportBtn" class="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600 transition btn">
+  <i class="fas fa-file-excel mr-2"></i>Export to Excel
+</button>
 
   <!-- Firebase Scripts -->
   <script type="module">
@@ -216,6 +223,17 @@
         }
       });
     });
+
+// Add this script before the closing </body> tag or in your existing script section
+document.getElementById('exportBtn').addEventListener('click', function () {
+  const table = document.querySelector('.patient-table');
+  TableToExcel.convert(table, {
+    name: 'Patient_History.xlsx',
+    sheet: {
+      name: 'Patient History'
+    }
+  });
+});
   </script>
 </body>
 </html>
